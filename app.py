@@ -57,14 +57,6 @@ st.markdown("---")
 # 6. رابط موقعك العالمي وأزرار مشاركة الرابط السريعة للناس
 app_url = "https://streamlit.app"
 
-st.markdown("#### 🔗 شارك هذا المركز مع أصدقائك:")
-col1, col2, col3 = st.columns(3)
 
-with col1:
-    st.link_button("🟢 مشاركة الرابط واتساب", f"https://whatsapp.com{app_url}")
 with col2:
-    st.link_button("🔵 مشاركة الرابط تليجرام", f"https://t.me{app_url}&text=تحميل%20أغنية%20Ahmed%20Al-Asmar%20المباشر")
-with col3:
-    if st.button("📋 نسخ رابط الموقع"):
-        st.toast("📋 تم نسخ الرابط المباشر للموقع!")
         st.code(app_url, language="text")
