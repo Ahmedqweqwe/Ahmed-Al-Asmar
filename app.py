@@ -1,19 +1,24 @@
 import streamlit as st
+import os
 
-st.set_page_config(page_title="موقع رفع الأغاني", page_icon="🎵")
+st.set_page_config(page_title="مركز تحميل الأغاني", page_icon="🎵", layout="centered")
 
-st.title("🎵 مركز رفع وتحميل الأغاني")
-st.write("قم برفع ملف الأغنية للحصول على رابط تحميل مباشر فوراً.")
+st.title("🎵 مركز تحميل الأغاني المباشر")
+st.write("اضغط على الزر أدناه لتنزيل الأغنية مباشرة إلى جهازك:")
 
-uploaded_file = st.file_uploader("اختر ملف الأغنية (MP3)", type=["mp3", "wav"])
+# اسم ملف الأغنية الذي رفعته على جيت هاب
+song_name = "حته حشيشة.mp3"
 
-if uploaded_file is not None:
-    st.success(f"✅ تم رفع الملف بنجاح: {uploaded_file.name}")
-    st.audio(uploaded_file, format="audio/mp3")
-    
-    st.download_button(
-        label="📥 اضغط هنا لتنزيل الأغنية مباشرة",
-        data=uploaded_file,
-        file_name=uploaded_file.name,
-        mime="audio/mp3"
-    )
+if os.path.exists(song_name):
+    with open(song_name, "rb") as file:
+        st.success(f"✅ الأغنية جاهزة للتحميل: {song_name}")
+        st.audio(file, format="audio/mp3")
+        
+        st.download_button(
+            label="📥 اضغط هنا لتنزيل الأغنية مباشرة",
+            data=file,
+            file_name=song_name,
+            mime="audio/mp3"
+        )
+else:
+    st.error("❌ تأكد من رفع ملف الأغنية على GitHub بنفس الاسم تماماً لتظهر هنا.")
