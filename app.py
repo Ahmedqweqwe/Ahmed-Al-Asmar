@@ -8,24 +8,19 @@ st.title("🎵🎬 مركز التحميل المباشر للجميع")
 st.markdown("### مرحباً بك! يمكنك تحميل الملف المرفوع مباشرة إلى جهازك بنقرة واحدة.")
 st.markdown("---")
 
-# ⚠️ ضع هنا الرابط المباشر لملفك (الملف الحالي تجريبي)
+# روابط الملفات التجريبية للأغنية
 file_direct_url = "https://soundhelix.com" 
+file_name = "الأغنية المطلوبة.mp3" 
 
-# اسم الملف الذي سيظهر للناس عند التحميل
-file_name = "حته حشيشة.mp3" 
-
-# 2. ترتيب وعرض الصورة الشخصية والبيانات بجانب بعضها بشكل متناسق
+# 2. ترتيب وعرض الصورة الشخصية والبيانات بجانب بعضها
 col_profile1, col_profile2 = st.columns([1, 2])
 
 with col_profile1:
-
-image_name = "Ahmed Al-Asmar1.jpg"
+    image_name = "Ahmed Al-Asmar1.jpg"
     if os.path.exists(image_name):
-        # عرض صورتك الشخصية المرفوعة بحجم متناسق ومناسب
         st.image(image_name, caption="Ahmed Al-Asmar", width=160)
     else:
-        # عرض بوستر مؤقت في حال لم ترفع الصورة بعد
-        st.image("https://unsplash.com", caption="Ahmed Al-Asmar1.jpg", width=160)
+        st.image("https://unsplash.com", caption="يرجى رفع الصورة", width=160)
 
 with col_profile2:
     st.markdown("### 🎙️ تفاصيل العمل الحالي")
