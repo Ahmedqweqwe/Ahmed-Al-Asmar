@@ -4,24 +4,44 @@ import os
 # 1. إعدادات الصفحة والعنوان الرئيسي للموقع
 st.set_page_config(page_title="مركز تحميل الأغاني الرسمي", page_icon="🎵", layout="centered")
 
+# اسم الملف الثابت الذي سيتم حفظ الأغنية المرفوعة به في السيرفر
+SAVED_AUDIO_PATH = "current_song.mp3"
+
+# --- لوحة تحكم خاصة بك لرفع الأغنية (مخفية في شريط جانبي بمشغل كلمة مرور) ---
+with st.sidebar:
+    st.markdown("### 🔐 لوحة تحكم الإدارة")
+    password = st.text_input("أدخل كلمة المرور لرفع أغنية جديدة:", type="password")
+    
+    # يمكنك تغيير كلمة المرور "1234" لأي شيء تريده
+    if password == "1234":
+        st.success("تم تسجيل الدخول بنجاح!")
+        uploaded_file = st.file_uploader("قم برفع الأغنية الجديدة هنا:", type=["mp3"])
+        
+        if uploaded_file is not None:
+            # حفظ الملف المرفوع داخل مجلد الموقع لكي يراه كل الزوار
+            with open(SAVED_AUDIO_PATH, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            st.success("✅ تم تحديث الأغنية بنجاح لجميع الزوار! قم بتحديث الصفحة.")
+    elif password != "":
+        st.error("كلمة المرور غير صحيحة!")
+
+# --- صفحة العرض للزوار ---
+
 st.title("🎵🎬 مركز التحميل المباشر للجميع")
 st.markdown("### مرحباً بك! يمكنك تحميل الملف المرفوع مباشرة إلى جهازك بنقرة واحدة.")
 st.markdown("---")
 
-# --- الجزء الجديد: زر رفع الأغاني ---
-st.markdown("### 📤 قسم رفع الأغاني الجديد")
-uploaded_file = st.file_uploader("اختر ملف الأغنية من جهازك (MP3, WAV, OGG):", type=["mp3", "wav", "ogg"])
-st.markdown("---")
-
-# روابط وأسماء الملفات الافتراضية
-default_file_url = "https://soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" # رابط تجريبي يعمل مباشرة
-file_name = "الأغنية المطلوبة.mp3"
-audio_data = default_file_url
-
-# التحقق مما إذا قام المستخدم برفع ملف جديد
-if uploaded_file is not None:
-    file_name = uploaded_file.name
-    audio_data = uploaded_file.read() # قراءة بيانات الملف المرفوع
+# التحقق من وجود الأغنية المرفوعة، وإلا يتم تشغيل الرابط الافتراضي القديم
+if os.path.exists(SAVED_AUDIO_PATH):
+    file_name = "الأغنية المطلوبة.mp3"
+    
+    # قراءة الملف المحفوظ لإرساله للمشغل وزر التحميل
+    with open(SAVED_AUDIO_PATH, "rb") as audio_file:
+        audio_bytes = audio_file.read()
+else:
+    # في حال لم ترفع أي أغنية بعد، يعمل الرابط التجريبي تلقائياً
+    file_name = "لم يتم رفع أغنية بعد.mp3"
+    audio_bytes = "https://soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
 
 # 2. ترتيب وعرض الصورة الشخصية والبيانات بجانب بعضها بشكل منسق واحترافي
 col_profile1, col_profile2 = st.columns([1, 2])
@@ -35,29 +55,29 @@ with col_profile1:
 
 with col_profile2:
     st.markdown("### 🎙️ تفاصيل العمل الحالي")
-    st.info(f"🎵 **اسم الأغنية:** {file_name.replace('.mp3', '').replace('.wav', '').replace('.ogg', '')}")
+    st.info(f"🎵 **اسم الأغنية:** {file_name.replace('.mp3', '')}")
     st.info("🎤 **المطرب:** Ahmed Al-Asmar")
 
 st.markdown("---")
-st.success("✅ الملف جاهز للاستماع والتحميل الفوري لجميع الزوار!")
+st.success("✅ الملف جاهز للتحميل الفوري لجميع الزوار!")
 
-# 3. مشغل الصوت للاستماع قبل التحميل (يتغير حسب الملف المرفوع)
+# 3. مشغل الصوت للاستماع قبل التحميل
 st.markdown("#### 🎧 استمع قبل التحميل:")
-st.audio(audio_data)
+st.audio(audio_bytes)
 
-# 4. زر التحميل المباشر
+# 4. زر التحميل المباشر الثابت لجميع الناس فوراً بدون حساب
 st.markdown("#### 📥 اضغط على الزر أدناه لبدء التنزيل:")
 
-# إذا كان الملف مرفوعاً من الجهاز نستخدم download_button، وإذا كان رابطاً نستخدم link_button
-if uploaded_file is not None:
+if os.path.exists(SAVED_AUDIO_PATH):
     st.download_button(
-        label="📥 اضغط هنا لتنزيل الملف المرفوع فوراً",
-        data=audio_data,
-        file_name=file_name,
-        mime=f"audio/{file_name.split('.')[-1]}"
+        label="📥 اضغط هنا لتنزيل الملف فوراً",
+        data=audio_bytes,
+        file_name="Ahmed_Al_Asmar.mp3",
+        mime="audio/mp3",
+        use_container_width=True
     )
 else:
-    st.link_button("📥 اضغط هنا لتنزيل الملف الافتراضي", default_file_url)
+    st.link_button("📥 اضغط هنا لتنزيل الملف الافتراضي", audio_bytes, use_container_width=True)
 
 st.markdown("---")
 
