@@ -1,12 +1,27 @@
 import streamlit as st
 import os
+import urllib.parse
 
 # 1. إعدادات الصفحة والعنوان الرئيسي للموقع
 st.set_page_config(page_title="مركز تحميل الأغاني الرسمي", page_icon="🎵", layout="centered")
 
 # الملفات الثابتة التي يتم حفظها في السيرفر
 SAVED_AUDIO_PATH = "current_song.mp3"
-SAVED_INFO_PATH = "song_name.txt"  # ملف نصي صغير لحفظ اسم الأغنية الحقيقي تلقائياً
+SAVED_INFO_PATH = "song_name.txt"
+SAVED_SHORT_URL_PATH = "short_url.txt" # ملف لحفظ الرابط المختصر
+
+# دالة برمجية سريعة لتوليد رابط TinyURL مختصر بدون مكتبات معقدة
+def get_tinyurl(long_url):
+    try:
+        # نستخدم خدمة tinyurl المجانية عبر طلب بسيط
+        api_url = f"http://tinyurl.com/api-create.php?url={urllib.parse.quote(long_url)}"
+        import requests
+        response = requests.get(api_url)
+        if response.status_code == 200:
+            return response.text
+        return None
+    except:
+        return None
 
 # --- لوحة تحكم الإدارة (مخفية في الشريط الجانبي) ---
 with st.sidebar:
@@ -15,6 +30,10 @@ with st.sidebar:
     
     if password == "1234": # يمكنك تغيير الرقم السري من هنا
         st.success("تم تسجيل الدخول بنجاح!")
+        
+        # خانة لوضع رابط الموقع الحالي ليتم اختصاره
+        my_website_url = st.text_input("ضع رابط موقعك الحالي هنا (لاختصاره):", placeholder="https://xxxx.streamlit.app")
+        
         uploaded_file = st.file_uploader("قم برفع الأغنية الجديدة هنا:", type=["mp3"])
         
         if uploaded_file is not None:
@@ -22,13 +41,21 @@ with st.sidebar:
             with open(SAVED_AUDIO_PATH, "wb") as f:
                 f.write(uploaded_file.getbuffer())
             
-            # 2. حفظ اسم الملف الأصلي تلقائياً ليعرض للزوار
+            # 2. حفظ اسم الملف الأصلي تلقائياً
             clean_name = uploaded_file.name.replace(".mp3", "").replace("_", " ").strip()
             with open(SAVED_INFO_PATH, "w", encoding="utf-8") as f:
                 f.write(clean_name)
+            
+            # 3. عمل الرابط المختصر تلقائياً لو تم إدخال رابط الموقع
+            if my_website_url:
+                shortened = get_tinyurl(my_website_url)
+                if shortened:
+                    with open(SAVED_SHORT_URL_PATH, "w", encoding="utf-8") as f:
+                        f.write(shortened)
+                    st.info(f"🔗 الرابط المختصر الجديد الخاص بك: {shortened}")
                 
-            st.success("✅ تم تحديث الأغنية واسمها بنجاح لجميع الزوار!")
-            st.rerun() # إعادة إنعاش الصفحة فوراً لتطبيق التعديل
+            st.success("✅ تم تحديث الأغنية وتهيئة الرابط بنجاح!")
+            st.rerun()
             
     elif password != "":
         st.error("كلمة المرور غير صحيحة!")
@@ -39,29 +66,31 @@ st.title("🎵🎬 مركز التحميل المباشر للجميع")
 st.markdown("### مرحباً بك! يمكنك تحميل الملف المرفوع مباشرة إلى جهازك بنقرة واحدة.")
 st.markdown("---")
 
-# جلب البيانات تلقائياً بناءً على الملف المرفوع
+# جلب البيانات تلقائياً
 if os.path.exists(SAVED_AUDIO_PATH):
-    # قراءة الصوت
     with open(SAVED_AUDIO_PATH, "rb") as audio_file:
         audio_bytes = audio_file.read()
     
-    # قراءة اسم الأغنية التلقائي الذي تم حفظه
     if os.path.exists(SAVED_INFO_PATH):
         with open(SAVED_INFO_PATH, "r", encoding="utf-8") as f:
             display_song_name = f.read()
     else:
         display_song_name = "أغنية جديدة"
 else:
-    # في حال لم يتم رفع أي ملف بعد (حالة افتراضية أولى)
     display_song_name = "جاري تجهيز العمل الفني الجديد..."
     audio_bytes = "https://soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
 
-# 2. ترتيب وعرض الصورة الشخصية والبيانات بجانب بعضها بشكل تلقائي
+# عرض زر نسخ الرابط المختصر في صفحة الإدارة أو للزوار لو أحببت (هنا يظهر في الأعلى لو تم إنشاؤه)
+if os.path.exists(SAVED_SHORT_URL_PATH) and password == "1234":
+    with open(SAVED_SHORT_URL_PATH, "r", encoding="utf-8") as f:
+        saved_short_url = f.read()
+    st.code(f"الرابط المختصر لنشره: {saved_short_url}", language="text")
+
+# 2. الصورة الشخصية والبيانات بجانب بعضها
 col_profile1, col_profile2 = st.columns([1, 2])
 
 with col_profile1:
     image_name = "Ahmed Al-Asmar1.jpg"
-    # تظهر صورة الفنان تلقائياً إذا كانت مرفوعة بجانب الكود، وإلا تظهر صورة ميكروفون افتراضية احترافية
     if os.path.exists(image_name):
         st.image(image_name, caption="Ahmed Al-Asmar", width=160)
     else:
@@ -75,11 +104,11 @@ with col_profile2:
 st.markdown("---")
 st.success("✅ الملف جاهز للاستماع والتحميل الفوري لجميع الزوار!")
 
-# 3. مشغل الصوت التلقائي
+# 3. مشغل الصوت
 st.markdown("#### 🎧 استمع قبل التحميل:")
 st.audio(audio_bytes)
 
-# 4. زر التحميل المباشر التلقائي
+# 4. زر التحميل المباشر
 st.markdown("#### 📥 اضغط على الزر أدناه لبدء التنزيل:")
 
 if os.path.exists(SAVED_AUDIO_PATH):
