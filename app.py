@@ -44,19 +44,3 @@ st.markdown("---")
 st.markdown("### 📞 لطلب الأغاني والتواصل المباشر:")
 st.warning("📱 **رقم الهاتف:** 01098219874")
 
-phone_number = "201098219874"
-
-col_chat1, col_chat2 = st.columns(2)
-with col_chat1:
-    st.link_button("🟢 تواصل معي عبر واتساب", f"https://wa.me{phone_number}?text=أهلاً%20أستاذ%20أحمد،%20أريد%20طلب%20أغنية")
-with col_chat2:
-    st.link_button("🔵 تواصل معي عبر تليجرام", f"https://t.me")
-
-st.markdown("---")
-
-# 6. رابط موقعك العالمي وأزرار مشاركة الرابط السريعة للناس
-app_url = "https://streamlit.app"
-
-
-with col2:
-        st.code(app_url, language="text")
