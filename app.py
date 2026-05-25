@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import urllib.parse
+import requests  # تأكيد استيراد المكتبة في الأعلى لمنع أي خطأ
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, TIT2, TPE1, TCOP, WXXX, COMM
 
@@ -16,8 +17,7 @@ SAVED_SHORT_URL_PATH = "short_url.txt"
 def get_tinyurl(long_url):
     try:
         api_url = f"http://tinyurl.com/api-create.php?url={urllib.parse.quote(long_url)}"
-        import requests
-        response = requests.get(api_url)
+        response = requests.get(api_url, timeout=10)
         if response.status_code == 200:
             return response.text
         return None
@@ -33,6 +33,20 @@ with st.sidebar:
         st.success("تم تسجيل الدخول بنجاح!")
         
         my_website_url = st.text_input("ضع رابط موقعك الحالي هنا (لاختصاره):", placeholder="https://xxxx.streamlit.app")
+        
+        # زر مخصص لاختصار الرابط وحفظه فوراً دون الحاجة لرفع ملف
+        if my_website_url:
+            if st.button("🔗 توليد وحفظ الرابط المختصر"):
+                with st.spinner("جاري اختصار الرابط..."):
+                    shortened = get_tinyurl(my_website_url)
+                    if shortened:
+                        with open(SAVED_SHORT_URL_PATH, "w", encoding="utf-8") as f:
+                            f.write(shortened)
+                        st.sidebar.success(f"تم توليد الرابط بنجاح!")
+                    else:
+                        st.sidebar.error("فشل اختصار الرابط، تأكد من جودة الإنترنت أو صحة الرابط.")
+
+        st.markdown("---")
         uploaded_file = st.file_uploader("قم برفع الأغنية الجديدة هنا:", type=["mp3"])
         
         if uploaded_file is not None:
@@ -45,7 +59,7 @@ with st.sidebar:
             with open(SAVED_INFO_PATH, "w", encoding="utf-8") as f:
                 f.write(clean_name)
             
-            # 3. 🛡️ إضافة حقوق الطبع والنشر الرقمية بداخل كود ملف الـ MP3 تلقائياً (تأمين دون حظر)
+            # 3. 🛡️ إضافة حقوق الطبع والنشر الرقمية بداخل كود ملف الـ MP3 تلقائياً
             try:
                 audio = MP3(SAVED_AUDIO_PATH, ID3=ID3)
                 try:
@@ -54,8 +68,8 @@ with st.sidebar:
                     pass
                 
                 # إضافة الميتا داتا (Metadata) لحماية ملكية الفنان
-                audio.tags.add(TIT2(encoding=3, text=clean_name))                             # اسم الأغنية
-                audio.tags.add(TPE1(encoding=3, text="Ahmed Al-Asmar"))                       # اسم الفنان
+                audio.tags.add(TIT2(encoding=3, text=clean_name))                                             # اسم الأغنية
+                audio.tags.add(TPE1(encoding=3, text="Ahmed Al-Asmar"))                                       # اسم الفنان
                 audio.tags.add(TCOP(encoding=3, text="© 2026 Ahmed Al-Asmar. All Rights Reserved.")) # نص حق الطبع والنشر
                 audio.tags.add(WXXX(encoding=3, desc="Official Website", url=my_website_url if my_website_url else "https://streamlit.io")) 
                 audio.tags.add(COMM(encoding=3, lang="ara", desc="حقوق الملكية", text="تم الرفع عبر المركز الرسمي للمطرب أحمد الأسمر.")) 
@@ -65,16 +79,7 @@ with st.sidebar:
             except Exception as e:
                 st.sidebar.error(f"تنبيه: تم حفظ الملف ولكن لم يتم تشفير الحقوق الداخلية بسبب: {e}")
             
-            # 4. عمل الرابط المختصر تلقائياً
-            if my_website_url:
-                shortened = get_tinyurl(my_website_url)
-                if shortened:
-                    with open(SAVED_SHORT_URL_PATH, "w", encoding="utf-8") as f:
-                        f.write(shortened)
-                    st.info(f"🔗 الرابط المختصر الجديد: {shortened}")
-                
-            st.success("✅ تم تحديث الأغنية وتأمين الحقوق بنجاح!")
-            st.rerun()
+            st.success("✅ تم تحديث الأغنية بنجاح! يرجى تحديث الصفحة يدويًا لرؤية التغييرات.")
             
     elif password != "":
         st.error("كلمة المرور غير صحيحة!")
@@ -97,7 +102,7 @@ if os.path.exists(SAVED_AUDIO_PATH):
         display_song_name = "أغنية جديدة"
 else:
     display_song_name = "جاري تجهيز العمل الفني الجديد..."
-    audio_bytes = "https://soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+    audio_bytes = b"" # تعديل لتفادي تعليق المشغل عند فراغ الملف
 
 # عرض زر نسخ الرابط المختصر في صفحة الإدارة عند تسجيل الدخول
 if os.path.exists(SAVED_SHORT_URL_PATH) and password == "1234":
@@ -125,12 +130,15 @@ st.success("✅ الملف جاهز للاستماع والتحميل الفور
 
 # 3. مشغل الصوت
 st.markdown("#### 🎧 استمع قبل التحميل:")
-st.audio(audio_bytes)
+if audio_bytes:
+    st.audio(audio_bytes)
+else:
+    st.audio("https://soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3")
 
 # 4. زر التحميل المباشر
 st.markdown("#### 📥 اضغط على الزر أدناه لبدء التنزيل:")
 
-if os.path.exists(SAVED_AUDIO_PATH):
+if os.path.exists(SAVED_AUDIO_PATH) and audio_bytes:
     st.download_button(
         label=f"📥 اضغط هنا لتنزيل ({display_song_name}) فوراً",
         data=audio_bytes,
@@ -139,9 +147,9 @@ if os.path.exists(SAVED_AUDIO_PATH):
         use_container_width=True
     )
 else:
-    st.link_button("📥 اضغط هنا لتنزيل الملف التجريبي", audio_bytes, use_container_width=True)
+    st.link_button("📥 اضغط هنا لتنزيل الملف التجريبي", "https://soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", use_container_width=True)
 
-# --- ⚖️ قسم الترحيب بالنشر وصناعة التريند (الآمن 100% للجمهور) ---
+# --- ⚖️ قسم الترحيب بالنشر وصناعة التريند ---
 st.markdown("---")
 st.markdown(
     """
